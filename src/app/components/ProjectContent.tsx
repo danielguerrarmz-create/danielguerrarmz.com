@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import type { ControlState } from '../App';
-import exampleImage from 'figma:asset/6dd37bc01a9108bbd6e216efedee3953c8760647.png';
+import exampleImage from '../../assets/6dd37bc01a9108bbd6e216efedee3953c8760647.png';
 
 interface Project {
   id: number;
