@@ -1,169 +1,224 @@
-import { useState } from 'react';
-import { DialNavigation } from './components/DialNavigation';
-import { ProjectContent } from './components/ProjectContent';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { DJBoard } from '@/components/djboard/DJBoard';
+import { ContentArea } from '@/components/content/ContentArea';
+import { ScrollToTop } from '@/components/shared/ScrollToTop';
+import { projects } from '@/data/projects';
+import { aboutData } from '@/data/about';
+import {
+  DEFAULT_NARRATOR,
+  IDLE_TIP,
+  NARRATOR_VIEWING,
+  NARRATOR_BALANCED,
+  NARRATOR_ARCH_EXCLUDED,
+  NARRATOR_PROD_EXCLUDED,
+  NARRATOR_SW_EXCLUDED,
+  NARRATOR_ARCH_EMPHASIS,
+  NARRATOR_PROD_EMPHASIS,
+  NARRATOR_SW_EMPHASIS,
+  NARRATOR_MIX,
+  NARRATOR_HERO_ON,
+  NARRATOR_HERO_OFF,
+  NARRATOR_META_ON,
+  NARRATOR_META_OFF,
+  NARRATOR_DETAIL,
+  NARRATOR_ASK_ACTIVE,
+  NARRATOR_SEARCHING,
+} from '@/data/narratorMessages';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useKeywordSearch } from '@/hooks/useKeywordSearch';
+import { useProjectSort } from '@/hooks/useProjectSort';
+import { updateDisciplineMix } from '@/utils/disciplineMath';
+import { getDetailLabel } from '@/utils/formatters';
+import type { DisciplineMix, ViewControls, Project } from '@/types';
 
-export interface ControlState {
-  architectureEmphasis: number; // 0-100
-  productDesignEmphasis: number; // 0-100
-  softwareEmphasis: number; // 0-100
-  viewMode: 'hero' | 'breakdown'; // Toggle switch 1
-  showMetadata: boolean; // Toggle switch 2
-  detailDepth: number; // 0-100 (slider 1)
-  timelineProgress: number; // 0-100 (slider 2)
-}
-
-// Mock project data
-const projects = [
-  {
-    id: 0,
-    title: 'About Me',
-    type: 'about',
-    overview: 'Welcome to my portfolio. I work at the intersection of architecture, product design, and software engineering, creating holistic solutions that bridge physical and digital experiences.',
-    architecture: 'Architectural thinking and spatial design',
-    productDesign: 'User experience and interface design',
-    software: 'Full-stack development and system architecture',
-    hasTimeline: false,
-  },
-  {
-    id: 1,
-    title: 'Project 1',
-    type: 'project',
-    position: 'Urban Innovation Lab',
-    overview: 'This project explores the relationship between architectural space and digital interaction, creating a seamless experiential flow that bridges the physical and virtual.',
-    architecture: 'Spatial design and environmental innovation',
-    productDesign: 'User-centered interfaces with adaptive design systems',
-    software: 'Full-stack development with real-time data integration',
-    metadata: {
-      date: '2024-2025',
-      collaborators: 'Studio XYZ, Tech Labs',
-      tools: 'Rhino, Figma, React, Node.js',
-      duration: '8 months'
-    },
-    hasTimeline: true,
-  },
-  {
-    id: 2,
-    title: 'Project 2',
-    type: 'project',
-    position: 'Smart Living Ecosystem',
-    overview: 'This project explores the relationship between architectural space and digital interaction, creating a seamless experiential flow that bridges the physical and virtual.',
-    architecture: 'Spatial design and environmental innovation',
-    productDesign: 'User-centered interfaces with adaptive design systems',
-    software: 'Full-stack development with real-time data integration',
-    metadata: {
-      date: '2024',
-      collaborators: 'Design Collective',
-      tools: 'AutoCAD, Sketch, Python',
-      duration: '6 months'
-    },
-    hasTimeline: true,
-  },
-  {
-    id: 3,
-    title: 'Project 3',
-    type: 'project',
-    position: 'Sustainable Design Framework',
-    overview: 'This project explores innovative design solutions at the intersection of form and function, leveraging cutting-edge technology for sustainable outcomes.',
-    architecture: 'Modular construction with biophilic elements',
-    productDesign: 'Ergonomic interfaces with haptic feedback',
-    software: 'Cloud-based platforms with AI integration',
-    metadata: {
-      date: '2023-2024',
-      collaborators: 'Green Build Initiative',
-      tools: 'Revit, Adobe XD, TensorFlow',
-      duration: '12 months'
-    },
-    hasTimeline: true,
-  },
-  {
-    id: 4,
-    title: 'Project 4',
-    type: 'project',
-    position: 'Adaptive Environments',
-    overview: 'A multidisciplinary approach to creating adaptive environments that respond to user behavior and environmental conditions in real-time.',
-    architecture: 'Dynamic facades and responsive structures',
-    productDesign: 'Context-aware product ecosystems',
-    software: 'IoT infrastructure with machine learning',
-    metadata: {
-      date: '2023',
-      collaborators: 'Smart City Lab',
-      tools: 'Grasshopper, Framer, Arduino',
-      duration: '10 months'
-    },
-    hasTimeline: true,
-  },
-  {
-    id: 5,
-    title: 'Project 5',
-    type: 'project',
-    position: 'Digital Fabrication Studio',
-    overview: 'Exploring new paradigms in digital fabrication and parametric design to create customizable, user-centric experiences.',
-    architecture: 'Computational design with 3D printing',
-    productDesign: 'Mass customization frameworks',
-    software: 'Generative design algorithms',
-    metadata: {
-      date: '2022-2023',
-      collaborators: 'Fab Lab Network',
-      tools: 'Rhino, Blender, Processing',
-      duration: '9 months'
-    },
-    hasTimeline: false,
-  },
-  {
-    id: 6,
-    title: 'Project 6',
-    type: 'project',
-    position: 'Heritage + Technology',
-    overview: 'A synthesis of traditional craftsmanship and modern technology, creating timeless designs with contemporary functionality.',
-    architecture: 'Heritage restoration with smart systems',
-    productDesign: 'Artisanal products with embedded tech',
-    software: 'Legacy system modernization',
-    metadata: {
-      date: '2022',
-      collaborators: 'Heritage Foundation',
-      tools: 'SketchUp, Illustrator, Vue.js',
-      duration: '7 months'
-    },
-    hasTimeline: true,
-  },
-];
-
-export default function App() {
-  const [activeProjectIndex, setActiveProjectIndex] = useState(0);
-  const [controls, setControls] = useState<ControlState>({
-    architectureEmphasis: 33.33,
-    productDesignEmphasis: 33.33,
-    softwareEmphasis: 33.33,
-    viewMode: 'hero',
-    showMetadata: false,
-    detailDepth: 100,
-    timelineProgress: 100,
+export function App() {
+  const [activeProjectId, setActiveProjectId] = useState(0);
+  const [disciplineMix, setDisciplineMix] = useState<DisciplineMix>({
+    arch: 33,
+    prod: 33,
+    sw: 34,
   });
+  const [viewControls, setViewControls] = useState<ViewControls>({
+    heroEnabled: true,
+    metadataEnabled: false,
+    detailDepth: 100,
+  });
+  const [narratorMessage, setNarratorMessage] = useState(DEFAULT_NARRATOR);
+  const [askResponse, setAskResponse] = useState<string | null>(null);
+  const contentScrollRef = useRef<HTMLDivElement>(null);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isInitialMount = useRef(true);
+  const { search: keywordSearch } = useKeywordSearch();
 
-  const updateControl = (key: keyof ControlState, value: any) => {
-    setControls(prev => ({ ...prev, [key]: value }));
-  };
+  const debouncedMix = useDebounce(disciplineMix, 150);
+  const sortedProjects = useProjectSort(debouncedMix);
+
+  const activeIndex = sortedProjects.findIndex((p) => p.id === activeProjectId);
+  const safeActiveIndex = activeIndex >= 0 ? activeIndex : 0;
+  const currentProject =
+    projects.find((p) => p.id === activeProjectId) ?? projects[0];
+
+  const resetIdleTimer = useCallback(() => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(
+      () => setNarratorMessage(IDLE_TIP),
+      10000
+    );
+  }, []);
+
+  const handleDisciplineChange = useCallback(
+    (knob: 'arch' | 'prod' | 'sw', newValue: number) => {
+      setDisciplineMix((prev) => updateDisciplineMix(prev, knob, newValue));
+      resetIdleTimer();
+    },
+    [resetIdleTimer]
+  );
+
+  const handleProjectChange = useCallback((index: number) => {
+    setActiveProjectId(sortedProjects[index].id);
+  }, [sortedProjects]);
+
+  const handleControlChange = useCallback(
+    (key: keyof ViewControls, value: unknown) => {
+      setViewControls((prev) => ({ ...prev, [key]: value }));
+      resetIdleTimer();
+    },
+    [resetIdleTimer]
+  );
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    setNarratorMessage(NARRATOR_VIEWING(currentProject.title));
+    resetIdleTimer();
+  }, [activeProjectId, currentProject.title, resetIdleTimer]);
+
+  const prevDisciplineMixRef = useRef<DisciplineMix | null>(null);
+  useEffect(() => {
+    const prev = prevDisciplineMixRef.current;
+    prevDisciplineMixRef.current = disciplineMix;
+    if (prev === null) return;
+    const { arch, prod, sw } = disciplineMix;
+    const balanced =
+      Math.abs(arch - 33) <= 2 &&
+      Math.abs(prod - 33) <= 2 &&
+      Math.abs(sw - 34) <= 2;
+    const oneDominates = arch > 60 || prod > 60 || sw > 60;
+    const oneExcluded = arch === 0 || prod === 0 || sw === 0;
+    if (balanced) {
+      setNarratorMessage(NARRATOR_BALANCED);
+    } else if (oneExcluded) {
+      if (arch === 0) setNarratorMessage(NARRATOR_ARCH_EXCLUDED);
+      else if (prod === 0) setNarratorMessage(NARRATOR_PROD_EXCLUDED);
+      else setNarratorMessage(NARRATOR_SW_EXCLUDED);
+    } else if (oneDominates) {
+      if (arch > 60) setNarratorMessage(NARRATOR_ARCH_EMPHASIS);
+      else if (prod > 60) setNarratorMessage(NARRATOR_PROD_EMPHASIS);
+      else setNarratorMessage(NARRATOR_SW_EMPHASIS);
+    } else {
+      setNarratorMessage(NARRATOR_MIX(arch, prod, sw));
+    }
+    resetIdleTimer();
+  }, [disciplineMix, resetIdleTimer]);
+
+  const prevViewRef = useRef({
+    heroEnabled: viewControls.heroEnabled,
+    metadataEnabled: viewControls.metadataEnabled,
+    detailDepth: viewControls.detailDepth,
+  });
+  useEffect(() => {
+    const { heroEnabled, metadataEnabled, detailDepth } = viewControls;
+    const prev = prevViewRef.current;
+    if (heroEnabled !== prev.heroEnabled) {
+      prevViewRef.current = { ...prev, heroEnabled };
+      setNarratorMessage(heroEnabled ? NARRATOR_HERO_ON : NARRATOR_HERO_OFF);
+      resetIdleTimer();
+    }
+    if (metadataEnabled !== prev.metadataEnabled) {
+      prevViewRef.current = { ...prev, metadataEnabled };
+      setNarratorMessage(
+        metadataEnabled ? NARRATOR_META_ON : NARRATOR_META_OFF
+      );
+      resetIdleTimer();
+    }
+    if (detailDepth !== prev.detailDepth) {
+      prevViewRef.current = { ...prev, detailDepth };
+      setNarratorMessage(NARRATOR_DETAIL(getDetailLabel(detailDepth)));
+      resetIdleTimer();
+    }
+  }, [
+    viewControls.heroEnabled,
+    viewControls.metadataEnabled,
+    viewControls.detailDepth,
+    resetIdleTimer,
+  ]);
+
+  const handleAskFocus = useCallback(() => {
+    setNarratorMessage(NARRATOR_ASK_ACTIVE);
+    resetIdleTimer();
+  }, [resetIdleTimer]);
+
+  const handleAskSubmit = useCallback(
+    (question: string) => {
+      setNarratorMessage(NARRATOR_SEARCHING(question));
+      resetIdleTimer();
+      const result = keywordSearch(question);
+      setAskResponse(result.response);
+      if (result.action === 'navigate' && result.payload) {
+        const payload = result.payload as { projectId?: number };
+        if (typeof payload.projectId === 'number') {
+          const idx = sortedProjects.findIndex((p) => p.id === payload.projectId);
+          if (idx >= 0) setActiveProjectId(sortedProjects[idx].id);
+        }
+      }
+      if (result.action === 'filter' && result.payload) {
+        const payload = result.payload as DisciplineMix;
+        setDisciplineMix(payload);
+      }
+    },
+    [resetIdleTimer, keywordSearch, sortedProjects]
+  );
+
+  useEffect(() => {
+    resetIdleTimer();
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [resetIdleTimer]);
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-gray-50 flex">
-      {/* Left 1/3 - DJ Control Board */}
-      <div className="w-1/3 relative bg-gradient-to-br from-gray-100 to-gray-200 border-r border-gray-300">
-        <DialNavigation
-          projects={projects}
-          activeIndex={activeProjectIndex}
-          onProjectChange={setActiveProjectIndex}
-          controls={controls}
-          onControlChange={updateControl}
+    <div className="flex h-screen w-screen overflow-hidden bg-gray-50">
+      <DJBoard
+        projects={sortedProjects}
+        activeIndex={safeActiveIndex}
+        onProjectChange={handleProjectChange}
+        disciplineMix={disciplineMix}
+        onDisciplineChange={handleDisciplineChange}
+        viewControls={viewControls}
+        onControlChange={handleControlChange}
+        narratorMessage={narratorMessage}
+        onAskSubmit={handleAskSubmit}
+        askResponse={askResponse}
+        onAskFocus={handleAskFocus}
+      />
+      <main
+        ref={contentScrollRef}
+        className="overflow-y-auto flex-1"
+        style={{
+          marginLeft: 'calc(100vw * 7 / 24)',
+          width: 'calc(100vw * 17 / 24)',
+        }}
+      >
+        <ScrollToTop trigger={activeProjectId} scrollRef={contentScrollRef} />
+        <ContentArea
+          project={currentProject}
+          aboutData={aboutData}
+          viewControls={viewControls}
+          askResponse={askResponse}
         />
-      </div>
-
-      {/* Right 2/3 - Project Content */}
-      <div className="w-2/3 overflow-auto">
-        <ProjectContent 
-          project={projects[activeProjectIndex]} 
-          controls={controls}
-        />
-      </div>
+      </main>
     </div>
   );
 }
