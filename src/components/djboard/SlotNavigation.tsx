@@ -1,5 +1,4 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { motion } from 'motion/react';
 import { WIREFRAME_SHAPES, projectShape } from '@/utils/wireframeShapes';
 import type { Project } from '@/types';
 
@@ -10,11 +9,8 @@ export interface SlotNavigationProps {
   className?: string;
 }
 
-const MONO_FONT = "'SF Mono', 'Fira Code', 'Courier New', monospace";
 const WHITE = '#ffffff';
 const WHITE_DIM = 'rgba(255,255,255,0.3)';
-const DIVIDER = 'rgba(255,255,255,0.1)';
-const ARROW = 'rgba(255,255,255,0.15)';
 
 function WireframeSvg({
   projectIndex,
@@ -110,15 +106,14 @@ function SlotCell({
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col items-center justify-center gap-0.5 flex-1 min-h-0 w-full border-0 border-transparent rounded-none transition-colors cursor-pointer"
+      className={`slot-cell ${isActive ? 'is-active' : ''}`}
       style={{
         borderColor: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
         borderWidth: 1,
         borderStyle: 'solid',
       }}
     >
-      <div className="flex-1 min-h-0 min-w-0 w-full flex items-center justify-center">
-        <div className="w-[60%] h-[60%] min-w-8 min-h-8 max-w-[72px] max-h-[72px] flex items-center justify-center">
+      <div className="slot-shape">
           <WireframeSvg
             projectIndex={projectIndex}
             angleY={angleY}
@@ -128,19 +123,11 @@ function SlotCell({
             active={isActive}
             responsive
           />
-        </div>
       </div>
-      <span
-        className="uppercase truncate max-w-full px-0.5 text-center flex-shrink-0"
-        style={{
-          fontFamily: MONO_FONT,
-          fontSize: 10,
-          color: WHITE,
-          opacity: isActive ? 1 : 0.3,
-        }}
-      >
-        {project.title}
-      </span>
+      <div>
+        <div className="slot-num">{String(project.id).padStart(2, '0')}</div>
+        <div className="slot-title">{project.slotLabel ?? project.title}</div>
+      </div>
     </button>
   );
 }
@@ -155,23 +142,6 @@ export function SlotNavigation({
   const [scrollCooldown, setScrollCooldown] = useState(false);
   const [angleY, setAngleY] = useState(0);
   const rafRef = useRef<number>(0);
-  const [reordering, setReordering] = useState(false);
-  const prevOrderRef = useRef<string>('');
-
-  const orderKey = projects.map((p) => p.id).join(',');
-  useEffect(() => {
-    if (prevOrderRef.current === '') {
-      prevOrderRef.current = orderKey;
-      return;
-    }
-    if (prevOrderRef.current !== orderKey) {
-      prevOrderRef.current = orderKey;
-      setReordering(true);
-      const t = setTimeout(() => setReordering(false), 200);
-      return () => clearTimeout(t);
-    }
-  }, [orderKey]);
-
   const prevIndex = activeIndex === 0 ? projects.length - 1 : activeIndex - 1;
   const nextIndex = (activeIndex + 1) % projects.length;
 
@@ -185,13 +155,10 @@ export function SlotNavigation({
       e.preventDefault();
       setScrollCooldown(true);
       setTimeout(() => setScrollCooldown(false), 300);
-      if (e.deltaY > 0) {
-        onProjectChange(nextIndex);
-      } else {
-        if (activeIndex > 0) onProjectChange(activeIndex - 1);
-      }
+      if (e.deltaY > 0) onProjectChange((activeIndex + 1) % projects.length);
+      else onProjectChange((activeIndex - 1 + projects.length) % projects.length);
     },
-    [activeIndex, nextIndex, onProjectChange, scrollCooldown]
+    [activeIndex, onProjectChange, projects.length, scrollCooldown]
   );
 
   useEffect(() => {
@@ -216,31 +183,9 @@ export function SlotNavigation({
   const staticAngle = (30 * Math.PI) / 180;
 
   return (
-    <div
-      className={`w-full h-full flex flex-col gap-0 ${className ?? ''}`.trim()}
-    >
-      <motion.div
-        ref={containerRef}
-        className="flex-1 min-h-0 flex flex-col rounded overflow-hidden"
-        style={{
-          border: '2px solid #333',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-          borderRadius: 4,
-        }}
-        animate={{ opacity: reordering ? 0.3 : 1 }}
-        transition={{ duration: reordering ? 0.2 : 0.3 }}
-      >
-        <div
-          className="flex-1 min-h-0 flex flex-col rounded overflow-hidden"
-          style={{
-            background: '#1a1a1a',
-            borderRadius: 2,
-          }}
-        >
-          <div
-            className="flex-1 min-h-0 flex flex-col border-b border-dashed"
-            style={{ borderColor: DIVIDER }}
-          >
+    <div className={`slot-wrap ${className ?? ''}`.trim()}>
+      <div ref={containerRef} className="slot">
+        <div>
             <SlotCell
               project={projects[prevIndex]}
               projectIndex={prevIndex}
@@ -248,46 +193,19 @@ export function SlotNavigation({
               angleY={staticAngle}
               onClick={() => onProjectChange(prevIndex)}
             />
-          </div>
-
-          <div
-            className="flex-shrink-0 flex justify-center py-0.5 border-b border-dashed"
-            style={{
-              fontFamily: MONO_FONT,
-              fontSize: 12,
-              color: ARROW,
-              borderColor: DIVIDER,
-            }}
-          >
-            ↑
-          </div>
-
-          <div
-            className="flex-1 min-h-0 flex flex-col border-b border-dashed"
-            style={{ borderColor: DIVIDER }}
-          >
+        </div>
+        <div className="slot-divider"><span>▲</span></div>
+        <div>
             <SlotCell
               project={projects[activeIndex]}
               projectIndex={activeIndex}
               isActive={true}
               angleY={angleY}
-              onClick={() => {}}
+              onClick={() => onProjectChange(activeIndex)}
             />
-          </div>
-
-          <div
-            className="flex-shrink-0 flex justify-center py-0.5 border-b border-dashed"
-            style={{
-              fontFamily: MONO_FONT,
-              fontSize: 12,
-              color: ARROW,
-              borderColor: DIVIDER,
-            }}
-          >
-            ↓
-          </div>
-
-          <div className="flex-1 min-h-0 flex flex-col">
+        </div>
+        <div className="slot-divider"><span>▼</span></div>
+        <div>
             <SlotCell
               project={projects[nextIndex]}
               projectIndex={nextIndex}
@@ -295,19 +213,9 @@ export function SlotNavigation({
               angleY={staticAngle}
               onClick={() => onProjectChange(nextIndex)}
             />
-          </div>
         </div>
-      </motion.div>
-      <p
-        className="text-center uppercase flex-shrink-0 pt-1"
-        style={{
-          fontFamily: MONO_FONT,
-          fontSize: 7,
-          color: '#999',
-        }}
-      >
-        Scroll to navigate
-      </p>
+      </div>
+      <div className="slot-hint"><span>SCROLL · CLICK</span><span>{activeIndex + 1} / {projects.length}</span></div>
     </div>
   );
 }

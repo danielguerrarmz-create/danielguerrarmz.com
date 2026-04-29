@@ -14,6 +14,8 @@ export interface ProjectMetadata {
   category: string;
   tools: string[];
   duration: string;
+  awards?: string[];
+  course?: string;
 }
 
 export interface ProjectContent {
@@ -28,16 +30,28 @@ export interface ProjectContent {
   technicalDetails?: string;
 }
 
+/** Layout for project gallery: grid (2 cols), grid3 (3 cols), or feature (one large + grid). */
+export type GalleryLayout = 'grid' | 'grid3' | 'feature';
+
+export interface GalleryImage {
+  src: string;
+  title: string;
+}
+
 export interface ProjectAssets {
   hero: string;
   thumbnail?: string;
-  gallery: string[];
+  gallery: GalleryImage[];
+  /** How to arrange gallery; default 'grid'. */
+  galleryLayout?: GalleryLayout;
 }
 
 export interface Project {
   id: number;
   slug: string;
   title: string;
+  /** If set, used in slot navigation instead of title (e.g. shorter label). */
+  slotLabel?: string;
   disciplines: ProjectDisciplines;
   metadata: ProjectMetadata;
   content: ProjectContent;

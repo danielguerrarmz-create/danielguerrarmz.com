@@ -29,22 +29,21 @@ import { useKeywordSearch } from '@/hooks/useKeywordSearch';
 import { useProjectSort } from '@/hooks/useProjectSort';
 import { updateDisciplineMix } from '@/utils/disciplineMath';
 import { getDetailLabel } from '@/utils/formatters';
-import type { DisciplineMix, ViewControls, Project } from '@/types';
+import type { DisciplineMix, ViewControls } from '@/types';
 
 export function App() {
-  const [activeProjectId, setActiveProjectId] = useState(0);
+  const [activeProjectId, setActiveProjectId] = useState<number | null>(null);
   const [disciplineMix, setDisciplineMix] = useState<DisciplineMix>({
-    arch: 33,
-    prod: 33,
-    sw: 34,
+    arch: 50,
+    prod: 50,
+    sw: 50,
   });
   const [viewControls, setViewControls] = useState<ViewControls>({
     heroEnabled: true,
-    metadataEnabled: false,
-    detailDepth: 100,
+    metadataEnabled: true,
+    detailDepth: 60,
   });
   const [narratorMessage, setNarratorMessage] = useState(DEFAULT_NARRATOR);
-  const [askResponse, setAskResponse] = useState<string | null>(null);
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialMount = useRef(true);
@@ -53,10 +52,15 @@ export function App() {
   const debouncedMix = useDebounce(disciplineMix, 150);
   const sortedProjects = useProjectSort(debouncedMix);
 
-  const activeIndex = sortedProjects.findIndex((p) => p.id === activeProjectId);
+  const activeIndex =
+    activeProjectId == null
+      ? 0
+      : sortedProjects.findIndex((p) => p.id === activeProjectId);
   const safeActiveIndex = activeIndex >= 0 ? activeIndex : 0;
   const currentProject =
-    projects.find((p) => p.id === activeProjectId) ?? projects[0];
+    activeProjectId == null
+      ? projects[0]
+      : projects.find((p) => p.id === activeProjectId) ?? projects[0];
 
   const resetIdleTimer = useCallback(() => {
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
@@ -75,7 +79,8 @@ export function App() {
   );
 
   const handleProjectChange = useCallback((index: number) => {
-    setActiveProjectId(sortedProjects[index].id);
+    const project = sortedProjects[index];
+    if (project) setActiveProjectId(project.id);
   }, [sortedProjects]);
 
   const handleControlChange = useCallback(
@@ -89,6 +94,11 @@ export function App() {
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
+      return;
+    }
+    if (activeProjectId == null) {
+      setNarratorMessage(DEFAULT_NARRATOR);
+      resetIdleTimer();
       return;
     }
     setNarratorMessage(NARRATOR_VIEWING(currentProject.title));
@@ -164,18 +174,20 @@ export function App() {
     (question: string) => {
       setNarratorMessage(NARRATOR_SEARCHING(question));
       resetIdleTimer();
-      const result = keywordSearch(question);
-      setAskResponse(result.response);
-      if (result.action === 'navigate' && result.payload) {
-        const payload = result.payload as { projectId?: number };
-        if (typeof payload.projectId === 'number') {
-          const idx = sortedProjects.findIndex((p) => p.id === payload.projectId);
+      const { response, action, payload } = keywordSearch(question);
+      setNarratorMessage(response);
+      if (action === 'navigate' && payload) {
+        const navPayload = payload as { projectId?: number };
+        if (typeof navPayload.projectId === 'number') {
+          const idx = sortedProjects.findIndex(
+            (p) => p.id === navPayload.projectId
+          );
           if (idx >= 0) setActiveProjectId(sortedProjects[idx].id);
         }
       }
-      if (result.action === 'filter' && result.payload) {
-        const payload = result.payload as DisciplineMix;
-        setDisciplineMix(payload);
+      if (action === 'filter' && payload) {
+        const mixPayload = payload as DisciplineMix;
+        setDisciplineMix(mixPayload);
       }
     },
     [resetIdleTimer, keywordSearch, sortedProjects]
@@ -189,7 +201,7 @@ export function App() {
   }, [resetIdleTimer]);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-gray-50">
+    <div className="app">
       <DJBoard
         projects={sortedProjects}
         activeIndex={safeActiveIndex}
@@ -200,23 +212,18 @@ export function App() {
         onControlChange={handleControlChange}
         narratorMessage={narratorMessage}
         onAskSubmit={handleAskSubmit}
-        askResponse={askResponse}
         onAskFocus={handleAskFocus}
+        onGoHome={() => setActiveProjectId(null)}
       />
-      <main
-        ref={contentScrollRef}
-        className="overflow-y-auto flex-1"
-        style={{
-          marginLeft: 'calc(100vw * 7 / 24)',
-          width: 'calc(100vw * 17 / 24)',
-        }}
-      >
+      <main ref={contentScrollRef} className="content">
         <ScrollToTop trigger={activeProjectId} scrollRef={contentScrollRef} />
         <ContentArea
           project={currentProject}
+          activeProjectId={activeProjectId}
           aboutData={aboutData}
           viewControls={viewControls}
-          askResponse={askResponse}
+          projects={sortedProjects}
+          onOpenProject={(id) => setActiveProjectId(id)}
         />
       </main>
     </div>

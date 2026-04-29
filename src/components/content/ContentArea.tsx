@@ -1,19 +1,24 @@
 import type { Project, AboutData, ViewControls, DetailLevel } from '@/types';
+import { HeroPage } from './HeroPage';
 import { AboutPage } from './AboutPage';
 import { ProjectPage } from './ProjectPage';
 
 export interface ContentAreaProps {
   project: Project;
+  activeProjectId: number | null;
   aboutData: AboutData;
   viewControls: ViewControls;
-  askResponse: string | null;
+  projects: Project[];
+  onOpenProject: (id: number) => void;
 }
 
 export function ContentArea({
   project,
+  activeProjectId,
   aboutData,
   viewControls,
-  askResponse,
+  projects,
+  onOpenProject,
 }: ContentAreaProps) {
   const detailLevel: DetailLevel =
     viewControls.detailDepth < 33
@@ -22,28 +27,22 @@ export function ContentArea({
         ? 'balanced'
         : 'full';
 
-  const isAbout = project.slug === 'about-me';
+  const isHero = activeProjectId === null;
+  const isAbout = !isHero && project.slug === 'about-me';
 
-  return (
-    <div className="h-screen overflow-y-auto">
-      <div className="max-w-5xl mx-auto px-8 py-12">
-        {askResponse && (
-          <div className="mb-8 p-4 bg-gray-50 border border-gray-200 rounded font-mono text-sm text-gray-700">
-            {askResponse}
-          </div>
-        )}
+  if (isHero) {
+    return <HeroPage projects={projects} onOpen={onOpenProject} />;
+  }
 
-        {isAbout ? (
-          <AboutPage data={aboutData} detailLevel={detailLevel} />
-        ) : (
-          <ProjectPage
-            project={project}
-            heroEnabled={viewControls.heroEnabled}
-            metadataEnabled={viewControls.metadataEnabled}
-            detailLevel={detailLevel}
-          />
-        )}
-      </div>
-    </div>
+  return isAbout ? (
+    <AboutPage data={aboutData} detailLevel={detailLevel} />
+  ) : (
+    <ProjectPage
+      project={project}
+      projects={projects}
+      heroEnabled={viewControls.heroEnabled}
+      metadataEnabled={viewControls.metadataEnabled}
+      detailLevel={detailLevel}
+    />
   );
 }

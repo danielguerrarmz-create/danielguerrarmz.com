@@ -45,16 +45,76 @@ export const keywordDictionary: KeywordMatch[] = [
   {
     keywords: ['most technical', 'complex', 'hardest', 'challenging'],
     response:
-      'Project 3 was the most technically complex — a full-stack platform involving real-time data processing, ML inference, and a custom visual programming language.',
+      'Search by Assembly was the most technically complex — multi-modal precedent search with DINOv2 embeddings, FAISS retrieval, and a node-based canvas with designer-steerable fusion.',
     action: 'navigate',
-    payload: { projectId: 3 },
+    payload: { projectId: 4 },
   },
   {
     keywords: ['favorite', 'best', 'proud', 'proudest'],
     response:
-      'I am most proud of the Urban Innovation Lab — it brought together everything I care about: responsive architecture, physical computing, and real-time software, at city scale.',
+      'I am most proud of Synergy with the Cosmos — it brought together zero-mile architecture, biogenic materials research, and computational aggregation in one project.',
     action: 'navigate',
     payload: { projectId: 1 },
+  },
+  // Project 1: Synergy with the Cosmos
+  {
+    keywords: [
+      'synergy', 'cosmos', 'bamboo', 'hemp', 'plentify', 'biogenic', 'zero-mile',
+      'coyoacan', 'mexico city', 'wasp', 'grasshopper', 'aggregation', 'planter',
+      'living walls', 'compression test', 'hempcrete', 'cultivation', 'harvest',
+    ],
+    response:
+      'Synergy with the Cosmos is zero-mile urban infill with on-site bamboo and hemp cultivation and Plentify biogenic composite research. Want me to open that project?',
+    action: 'navigate',
+    payload: { projectId: 1 },
+  },
+  // Project 2: Pressure Ulcer Medical Device
+  {
+    keywords: [
+      'pressure ulcer', 'wound', 'kenya', 'eldoret', 'moi university', 'medical',
+      'wedge', 'cardboard', 'vernacular', 'nursing', 'bed sore', 'positioning',
+      'global learning', 'clinical', 'patient care', 'resource-limited',
+    ],
+    response:
+      'That’s the Pressure Ulcer Medical Device — vernacular design with cardboard wedges and visual instructions for wound care in Kenya. Want me to open it?',
+    action: 'navigate',
+    payload: { projectId: 2 },
+  },
+  // Project 3: Hydraulic Commons
+  {
+    keywords: [
+      'hydraulic', 'commons', 'water', 'infrastructure', 'aquaponics', 'austin',
+      'colorado river', 'filtration', 'treatment', 'triennale', 'lisbon',
+      'riverbank', 'community', 'pool', 'vertical farming', 'fish',
+    ],
+    response:
+      'Hydraulic Commons is water-driven architecture on the Colorado River — treatment, aquaponics, and community space. Want me to open it?',
+    action: 'navigate',
+    payload: { projectId: 3 },
+  },
+  // Project 4: Search by Assembly
+  {
+    keywords: [
+      'search by assembly', 'precedent', 'archdaily', 'dino', 'faiss', 'embedding',
+      'node', 'canvas', 'fusion', 'retrieval', 'caadria', 'acm dis', 'research',
+      'multi-modal', 'visual search', 'sketch', 'llm', 'patch', 'activation',
+    ],
+    response:
+      'Search by Assembly is my precedent search tool — node-based canvas, DINOv2/FAISS, designer-steerable fusion. Want me to open it?',
+    action: 'navigate',
+    payload: { projectId: 4 },
+  },
+  // Project 5: Dougherty Arts Center
+  {
+    keywords: [
+      'dougherty', 'arts center', 'adaptive reuse', 'catenary', 'arch', 'floodplain',
+      'austin', 'garrison', 'comprehensive studio', 'salvaged', 'refuge', 'park',
+      'art studio', 'mobile office', 'timber', 'truss', 'facade',
+    ],
+    response:
+      'Dougherty Arts Center is adaptive reuse with catenary arches and salvaged materials. Want me to open it?',
+    action: 'navigate',
+    payload: { projectId: 5 },
   },
   {
     keywords: [],

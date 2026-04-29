@@ -1,12 +1,11 @@
 import type { Project, DetailLevel } from '@/types';
 import { HeroSection } from './HeroSection';
 import { MetadataPanel } from './MetadataPanel';
-import { DisciplineColumns } from './DisciplineColumns';
 import { ProcessSection } from './ProcessSection';
-import { getPlaceholderImage } from '@/utils/placeholders';
 
 export interface ProjectPageProps {
   project: Project;
+  projects: Project[];
   heroEnabled: boolean;
   metadataEnabled: boolean;
   detailLevel: DetailLevel;
@@ -14,31 +13,32 @@ export interface ProjectPageProps {
 
 export function ProjectPage({
   project,
+  projects,
   heroEnabled,
   metadataEnabled,
   detailLevel,
 }: ProjectPageProps) {
+  const idx = projects.findIndex((p) => p.id === project.id);
   return (
-    <>
-      <h1 className="text-3xl font-bold text-red-600 mb-2">{project.title}</h1>
-      <p className="text-gray-500 font-mono text-sm mb-8">
-        {project.metadata.category} · {project.metadata.date}
-      </p>
+    <article className="page page-project">
+      <header className="proj-head">
+        <div className="proj-eyebrow">
+          PROJECT · {String(idx).padStart(2, '0')} / {String(projects.length - 1).padStart(2, '0')} · {project.metadata.category} · {project.metadata.date}
+        </div>
+        <h1 className="proj-title">{project.title}</h1>
+        <p className="proj-tagline">{project.content.summary}</p>
+      </header>
 
       {heroEnabled && (
         <HeroSection src={project.assets.hero} title={project.title} />
       )}
       {metadataEnabled && (
-        <MetadataPanel metadata={project.metadata} />
+        <MetadataPanel metadata={project.metadata} disciplines={project.disciplines} />
       )}
 
       {(detailLevel === 'balanced' || detailLevel === 'full') && (
-        <p className="text-gray-700 leading-relaxed mb-8">
-          {project.content.description}
-        </p>
+        <p className="proj-lede">{project.content.description}</p>
       )}
-
-      <DisciplineColumns disciplines={project.content.disciplines} />
 
       {detailLevel === 'full' && project.content.process && (
         <ProcessSection
@@ -48,27 +48,18 @@ export function ProjectPage({
       )}
 
       {detailLevel === 'full' && project.assets.gallery.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 mt-8">
-          {project.assets.gallery.map((src, i) => (
-            <img
-              key={i}
-              src={src}
-              alt={`${project.title} gallery ${i + 1}`}
-              className="w-full rounded"
-              loading="lazy"
-              onError={(e) => {
-                const target = e.currentTarget;
-                target.src = getPlaceholderImage(
-                  1200,
-                  800,
-                  `${project.title} ${i + 1}`
-                );
-                target.onerror = null;
-              }}
-            />
-          ))}
-        </div>
+        <section className="proj-section">
+          <h2>Selected views</h2>
+          <div className="gallery">
+            {project.assets.gallery.slice(0, 4).map((item, i) => (
+              <figure key={i}>
+                <img src={item.src} alt={item.title} />
+              </figure>
+            ))}
+          </div>
+        </section>
       )}
-    </>
+      <footer className="page-footer"><span>{project.title.toUpperCase()}</span><span>—</span><span>{project.metadata.date}</span></footer>
+    </article>
   );
 }

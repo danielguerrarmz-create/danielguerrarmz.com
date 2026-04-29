@@ -10,70 +10,53 @@ export function AboutPage({ data, detailLevel }: AboutPageProps) {
   const showFull = detailLevel === 'full';
 
   return (
-    <>
-      <h1 className="text-3xl font-bold text-red-600 mb-2">{data.name}</h1>
-      <p className="text-gray-500 font-mono text-sm mb-8">{data.tagline}</p>
-
-      <p className="text-gray-700 leading-relaxed mb-8">{data.bio}</p>
-
-      <div className="grid grid-cols-3 gap-8 mb-8">
-        <div>
-          <h3 className="text-red-600 font-semibold mb-2">Architecture</h3>
-          <ul className="text-gray-500 text-sm list-disc list-inside">
-            {data.skills.architecture.map((s, i) => (
-              <li key={i}>{s}</li>
-            ))}
-          </ul>
+    <article className="page page-about">
+      <header className="proj-head">
+        <div className="proj-eyebrow">ABOUT · 00</div>
+        <h1 className="proj-title">{data.name}</h1>
+        <p className="proj-tagline">{data.tagline}</p>
+      </header>
+      <p className="proj-lede">{data.bio}</p>
+      <section className="disc-cols">
+        <div className="disc-col">
+          <header><span className="disc-key">A</span><h3>Architecture</h3></header>
+          <ul>{data.skills.architecture.map((s, i) => <li key={i}>{s}</li>)}</ul>
         </div>
-        <div>
-          <h3 className="text-red-600 font-semibold mb-2">Product Design</h3>
-          <ul className="text-gray-500 text-sm list-disc list-inside">
-            {data.skills.productDesign.map((s, i) => (
-              <li key={i}>{s}</li>
-            ))}
-          </ul>
+        <div className="disc-col">
+          <header><span className="disc-key">P</span><h3>Product Design</h3></header>
+          <ul>{data.skills.productDesign.map((s, i) => <li key={i}>{s}</li>)}</ul>
         </div>
-        <div>
-          <h3 className="text-red-600 font-semibold mb-2">Software</h3>
-          <ul className="text-gray-500 text-sm list-disc list-inside">
-            {data.skills.software.map((s, i) => (
-              <li key={i}>{s}</li>
-            ))}
-          </ul>
+        <div className="disc-col">
+          <header><span className="disc-key">S</span><h3>Software</h3></header>
+          <ul>{data.skills.software.map((s, i) => <li key={i}>{s}</li>)}</ul>
         </div>
-      </div>
+      </section>
 
       {showFull && (
         <>
-          <h2 className="text-lg font-semibold text-red-600 mb-2">Education</h2>
-          <ul className="text-gray-700 leading-relaxed mb-8">
+          <section className="proj-section">
+          <h2>Education</h2>
+          <ul className="kv-list">
             {data.education.map((e, i) => (
               <li key={i}>
-                {e.degree}, {e.institution}, {e.year}
+                <span className="kv-k">{e.year}</span>
+                <span className="kv-v">{e.degree} · {e.institution}</span>
               </li>
             ))}
           </ul>
-
-          <h2 className="text-lg font-semibold text-red-600 mb-2">Contact</h2>
-          <p className="text-gray-700 leading-relaxed">
-            Email: {data.contact.email}
-            <br />
-            Location: {data.contact.location}
-            {data.contact.linkedin && (
-              <>
-                <br />
-                LinkedIn: {data.contact.linkedin}
-              </>
-            )}
-            {data.contact.portfolio && (
-              <>
-                <br />
-                Portfolio: {data.contact.portfolio}
-              </>
-            )}
-          </p>
+          </section>
+          <section className="proj-section">
+          <h2>Contact</h2>
+          <ul className="kv-list">
+            <li><span className="kv-k">EMAIL</span><span className="kv-v">{data.contact.email}</span></li>
+            <li><span className="kv-k">LOCATION</span><span className="kv-v">{data.contact.location}</span></li>
+            {data.contact.linkedin && <li><span className="kv-k">LINKEDIN</span><span className="kv-v">{data.contact.linkedin}</span></li>}
+            {data.contact.portfolio && <li><span className="kv-k">SITE</span><span className="kv-v">{data.contact.portfolio}</span></li>}
+          </ul>
+          </section>
         </>
       )}
-    </>
+      <footer className="page-footer"><span>DANIEL · ABOUT</span><span>—</span><span>{new Date().getFullYear()}</span></footer>
+    </article>
   );
 }
