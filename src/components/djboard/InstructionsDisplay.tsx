@@ -28,10 +28,18 @@ export function InstructionsDisplay({
 
   return (
     <div className="instructions">
-      <div className="instructions-screen">
-        <span className="instructions-prompt">&gt; daniel:</span>{' '}
-        <span className="instructions-text">{shown}</span>
-        {showCursor && <span className="instructions-cursor">▍</span>}
+      <div className="instructions-screen" style={{ fontFamily: 'inherit' }}>
+        <span className="instructions-prompt" style={{ fontFamily: 'inherit' }}>
+          &gt; daniel:
+        </span>{' '}
+        <span className="instructions-text" style={{ fontFamily: 'inherit' }}>
+          {shown}
+        </span>
+        {showCursor && (
+          <span className="instructions-cursor" style={{ fontFamily: 'inherit' }}>
+            ▍
+          </span>
+        )}
       </div>
     </div>
   );

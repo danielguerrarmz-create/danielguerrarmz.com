@@ -21,11 +21,8 @@ import {
   NARRATOR_META_ON,
   NARRATOR_META_OFF,
   NARRATOR_DETAIL,
-  NARRATOR_ASK_ACTIVE,
-  NARRATOR_SEARCHING,
 } from '@/data/narratorMessages';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useKeywordSearch } from '@/hooks/useKeywordSearch';
 import { useProjectSort } from '@/hooks/useProjectSort';
 import { updateDisciplineMix } from '@/utils/disciplineMath';
 import { getDetailLabel } from '@/utils/formatters';
@@ -34,21 +31,19 @@ import type { DisciplineMix, ViewControls } from '@/types';
 export function App() {
   const [activeProjectId, setActiveProjectId] = useState<number | null>(null);
   const [disciplineMix, setDisciplineMix] = useState<DisciplineMix>({
-    arch: 50,
-    prod: 50,
-    sw: 50,
+    arch: 33,
+    prod: 34,
+    sw: 33,
   });
   const [viewControls, setViewControls] = useState<ViewControls>({
     heroEnabled: true,
-    metadataEnabled: true,
-    detailDepth: 60,
+    metadataEnabled: false,
+    detailDepth: 25,
   });
   const [narratorMessage, setNarratorMessage] = useState(DEFAULT_NARRATOR);
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialMount = useRef(true);
-  const { search: keywordSearch } = useKeywordSearch();
-
   const debouncedMix = useDebounce(disciplineMix, 150);
   const sortedProjects = useProjectSort(debouncedMix);
 
@@ -165,34 +160,6 @@ export function App() {
     resetIdleTimer,
   ]);
 
-  const handleAskFocus = useCallback(() => {
-    setNarratorMessage(NARRATOR_ASK_ACTIVE);
-    resetIdleTimer();
-  }, [resetIdleTimer]);
-
-  const handleAskSubmit = useCallback(
-    (question: string) => {
-      setNarratorMessage(NARRATOR_SEARCHING(question));
-      resetIdleTimer();
-      const { response, action, payload } = keywordSearch(question);
-      setNarratorMessage(response);
-      if (action === 'navigate' && payload) {
-        const navPayload = payload as { projectId?: number };
-        if (typeof navPayload.projectId === 'number') {
-          const idx = sortedProjects.findIndex(
-            (p) => p.id === navPayload.projectId
-          );
-          if (idx >= 0) setActiveProjectId(sortedProjects[idx].id);
-        }
-      }
-      if (action === 'filter' && payload) {
-        const mixPayload = payload as DisciplineMix;
-        setDisciplineMix(mixPayload);
-      }
-    },
-    [resetIdleTimer, keywordSearch, sortedProjects]
-  );
-
   useEffect(() => {
     resetIdleTimer();
     return () => {
@@ -211,8 +178,6 @@ export function App() {
         viewControls={viewControls}
         onControlChange={handleControlChange}
         narratorMessage={narratorMessage}
-        onAskSubmit={handleAskSubmit}
-        onAskFocus={handleAskFocus}
         onGoHome={() => setActiveProjectId(null)}
       />
       <main ref={contentScrollRef} className="content">

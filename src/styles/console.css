@@ -19,7 +19,7 @@
 html, body, #root { margin: 0; width: 100%; height: 100%; }
 body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--paper); color: var(--ink); }
 
-.app { display: grid; grid-template-columns: minmax(380px, 32%) 1fr; width: 100vw; height: 100vh; background: var(--paper-2); }
+.app { position: relative; width: 100vw; height: 100vh; background: var(--paper-2); }
 .panel { background: var(--panel); border-right: 1px solid var(--panel-edge); padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
 .panel-head { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.08); }
 .panel-mark { width: 30px; height: 30px; background: var(--panel-deep); color: var(--paper); border: 0; cursor: pointer; display: grid; place-items: center; }
@@ -97,7 +97,7 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 .mixmeter-cell { flex: 1; height: 6px; background: rgba(0,0,0,0.08); border-radius: 2px; }
 .mixmeter-label, .mixmeter-num { font-size: 10px; font-weight: 700; color: var(--ink-70); }
 
-.content { overflow-y: auto; background: var(--paper); }
+.content { overflow-y: auto; overflow-x: hidden; background: var(--paper); margin-left: calc(100vw * 7 / 24); height: 100vh; }
 .page { max-width: 880px; margin: 0 auto; padding: 56px 64px 80px; }
 .page-hero { padding-top: 72px; }
 .hero-eyebrow, .proj-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.22em; color: var(--ink-70); text-transform: uppercase; margin-bottom: 18px; }
@@ -153,10 +153,19 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 .page-footer { margin-top: 80px; padding-top: 18px; border-top: 1px solid var(--ink-15); display: flex; justify-content: space-between; font-size: 10px; letter-spacing: 0.22em; color: var(--ink-50); text-transform: uppercase; }
 
 @media (max-width: 900px) {
-  .app { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .content { margin-left: calc(100vw * 7 / 24); }
   .panel { border-right: 0; border-bottom: 1px solid var(--panel-edge); }
   .page { padding: 32px 24px; }
   .hero-legend, .disc-cols, .gallery, .meta-grid { grid-template-columns: 1fr; }
   .hero-index-row { grid-template-columns: 40px 1fr 24px; }
   .hir-cat, .hir-mix { display: none; }
+}
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.control-tooltip-bubble {
+  animation: tooltipFadeIn 120ms ease forwards;
 }
