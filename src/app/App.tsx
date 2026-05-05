@@ -188,6 +188,9 @@ export function App() {
           aboutData={aboutData}
           viewControls={viewControls}
           projects={sortedProjects}
+          architectureEmphasis={disciplineMix.arch}
+          productDesignEmphasis={disciplineMix.prod}
+          softwareEmphasis={disciplineMix.sw}
           onOpenProject={(id) => setActiveProjectId(id)}
         />
       </main>

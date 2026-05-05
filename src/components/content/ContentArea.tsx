@@ -9,6 +9,9 @@ export interface ContentAreaProps {
   aboutData: AboutData;
   viewControls: ViewControls;
   projects: Project[];
+  architectureEmphasis: number;
+  productDesignEmphasis: number;
+  softwareEmphasis: number;
   onOpenProject: (id: number) => void;
 }
 
@@ -18,6 +21,9 @@ export function ContentArea({
   aboutData,
   viewControls,
   projects,
+  architectureEmphasis,
+  productDesignEmphasis,
+  softwareEmphasis,
   onOpenProject,
 }: ContentAreaProps) {
   const detailLevel: DetailLevel =
@@ -31,7 +37,14 @@ export function ContentArea({
   const isAbout = !isHero && project.slug === 'about-me';
 
   if (isHero) {
-    return <HeroPage projects={projects} onOpen={onOpenProject} />;
+    return (
+      <HeroPage
+        architectureEmphasis={architectureEmphasis}
+        productDesignEmphasis={productDesignEmphasis}
+        softwareEmphasis={softwareEmphasis}
+        onProjectChange={onOpenProject}
+      />
+    );
   }
 
   return isAbout ? (

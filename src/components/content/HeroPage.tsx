@@ -1,162 +1,325 @@
-import { useState, useMemo } from 'react';
-import type { Project } from '@/types';
+import { useEffect, useMemo, useState } from 'react';
 
 export interface HeroPageProps {
-  projects: Project[];
-  onOpen: (id: number) => void;
+  architectureEmphasis: number;
+  productDesignEmphasis: number;
+  softwareEmphasis: number;
+  onProjectChange: (id: number) => void;
 }
 
-/** Visual order + row spans for brickwork grid (maps to real `Project.id`). */
-const GALLERY_GRID_ORDER: readonly { projectId: number; span: number }[] = [
-  { projectId: 0, span: 2 },
-  { projectId: 2, span: 1 },
-  { projectId: 4, span: 1 },
-  { projectId: 3, span: 2 },
-  { projectId: 5, span: 1 },
-  { projectId: 1, span: 2 },
-];
-
-export interface GalleryItem {
+interface LandingProject {
   id: number;
   title: string;
   category: string;
+  A: number;
+  P: number;
+  S: number;
   span: number;
-  heroUrl: string;
 }
 
-function buildGalleryItems(projects: Project[]): GalleryItem[] {
-  const byId = new Map(projects.map((p) => [p.id, p]));
-  return GALLERY_GRID_ORDER.map(({ projectId, span }) => {
-    const p = byId.get(projectId);
-    if (!p) {
-      throw new Error(`Hero gallery: missing project id ${projectId}`);
-    }
-    return {
-      id: p.id,
-      title: p.title,
-      category: p.metadata.category,
-      span,
-      heroUrl: p.assets.hero,
-    };
-  });
+interface CardLayout {
+  colSpan: number;
+  rowSpan: number;
+}
+
+interface CardData extends CardLayout {
+  cardIndex: number;
+  grayValue: number;
+}
+
+const projects: LandingProject[] = [
+  {
+    id: 0,
+    title: 'About Me',
+    category: 'Personal',
+    A: 33,
+    P: 33,
+    S: 34,
+    span: 2,
+  },
+  {
+    id: 1,
+    title: 'Pressure Ulcer Medical Device',
+    category: 'Medical Product Design',
+    A: 5,
+    P: 85,
+    S: 10,
+    span: 1,
+  },
+  {
+    id: 2,
+    title: 'Search by Assembly: Node-Based Precedent Engine',
+    category: 'Research Software',
+    A: 20,
+    P: 25,
+    S: 55,
+    span: 1,
+  },
+  {
+    id: 3,
+    title: 'Hydraulic Commons: Water Infrastructure',
+    category: 'Infrastructural Architecture',
+    A: 70,
+    P: 15,
+    S: 15,
+    span: 2,
+  },
+  {
+    id: 4,
+    title: 'Synergy with the Cosmos',
+    category: 'Zero-Mile Architecture',
+    A: 75,
+    P: 10,
+    S: 15,
+    span: 1,
+  },
+  {
+    id: 5,
+    title: 'Dougherty Arts Center Renovation',
+    category: 'Adaptive Reuse',
+    A: 80,
+    P: 10,
+    S: 10,
+    span: 2,
+  },
+];
+
+const projectCardLayouts: Record<number, CardLayout[]> = {
+  0: [
+    { colSpan: 2, rowSpan: 2 },
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 2 },
+    { colSpan: 2, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 1 },
+  ],
+  1: [
+    { colSpan: 1, rowSpan: 2 },
+    { colSpan: 2, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 2, rowSpan: 2 },
+    { colSpan: 1, rowSpan: 1 },
+  ],
+  2: [
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 2 },
+    { colSpan: 2, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 2, rowSpan: 1 },
+  ],
+  3: [
+    { colSpan: 3, rowSpan: 2 },
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 2 },
+    { colSpan: 2, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 1 },
+  ],
+  4: [
+    { colSpan: 2, rowSpan: 2 },
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 2, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 1 },
+  ],
+  5: [
+    { colSpan: 1, rowSpan: 2 },
+    { colSpan: 2, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 1, rowSpan: 1 },
+    { colSpan: 3, rowSpan: 2 },
+    { colSpan: 1, rowSpan: 1 },
+  ],
+};
+
+const getWeightedScore = (
+  project: LandingProject,
+  A: number,
+  P: number,
+  S: number
+) => {
+  return (project.A * A + project.P * P + project.S * S) / 100;
+};
+
+function getProjectCards(project: LandingProject): CardData[] {
+  return (projectCardLayouts[project.id] ?? []).map((layout, i) => ({
+    ...layout,
+    cardIndex: i,
+    grayValue: 80 + ((project.id * 4 + i * 2) % 14),
+  }));
 }
 
 interface GalleryCardProps {
-  item: GalleryItem;
-  onClick: (id: number) => void;
+  project: LandingProject;
+  card: CardData;
+  onClick: () => void;
+  isReordering: boolean;
 }
 
-function GalleryCard({ item, onClick }: GalleryCardProps) {
+function GalleryCard({ project, card, onClick, isReordering }: GalleryCardProps) {
   const [hovered, setHovered] = useState(false);
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => onClick(item.id)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick(item.id);
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onClick();
         }
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        gridRow: `span ${item.span}`,
+        gridColumn: `span ${card.colSpan}`,
+        gridRow: `span ${card.rowSpan}`,
         position: 'relative',
         cursor: 'pointer',
-        borderRadius: '4px',
+        borderRadius: '3px',
         overflow: 'hidden',
-        backgroundColor: '#e0dedd',
-        transition: 'transform 200ms ease',
-        transform: hovered ? 'scale(1.015)' : 'scale(1)',
+        // Future: backgroundImage: `url(/images/projects/${project.id}/gallery_${card.cardIndex}.jpg)`
+        // Recommended dimensions per colSpan × rowSpan:
+        // 1×1: 600×360px, 2×1: 1200×360px, 3×1: 1800×360px
+        // 1×2: 600×720px, 2×2: 1200×720px, 3×2: 1800×720px
+        backgroundColor: `hsl(0, 0%, ${card.grayValue}%)`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        transition: 'transform 220ms ease, opacity 300ms ease',
+        transform: hovered ? 'scale(1.012)' : 'scale(1)',
+        opacity: isReordering ? 0 : 1,
       }}
     >
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundColor: `hsl(0, 0%, ${82 + (item.id * 3) % 10}%)`,
-          backgroundImage: item.heroUrl ? `url(${item.heroUrl})` : 'none',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
+      {card.cardIndex === 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '12px',
+            left: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            zIndex: 2,
+          }}
+        >
+          <span
+            style={{
+              fontSize: '0.5rem',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.7)',
+              backgroundColor: 'rgba(0,0,0,0.3)',
+              padding: '3px 7px',
+              borderRadius: '2px',
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            {String(project.id).padStart(2, '0')} · {project.category}
+          </span>
+        </div>
+      )}
 
       <div
         style={{
           position: 'absolute',
           inset: 0,
           background:
-            'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 55%)',
+            'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 50%)',
           opacity: hovered ? 1 : 0,
-          transition: 'opacity 200ms ease',
+          transition: 'opacity 220ms ease',
         }}
       />
 
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          padding: '20px 18px',
-          opacity: hovered ? 1 : 0,
-          transform: hovered ? 'translateY(0)' : 'translateY(6px)',
-          transition: 'opacity 200ms ease, transform 200ms ease',
-        }}
-      >
-        <span
+      {hovered && (
+        <div
           style={{
-            display: 'block',
-            fontSize: '0.55rem',
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.65)',
-            marginBottom: '4px',
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '16px 16px',
+            opacity: hovered ? 1 : 0,
+            transform: hovered ? 'translateY(0)' : 'translateY(5px)',
+            transition: 'opacity 220ms ease, transform 220ms ease',
+            zIndex: 2,
           }}
         >
-          {item.category}
-        </span>
-        <span
-          style={{
-            display: 'block',
-            fontSize: '1rem',
-            fontWeight: 700,
-            color: '#ffffff',
-            lineHeight: 1.25,
-          }}
-        >
-          {item.title}
-        </span>
-      </div>
+          <span
+            style={{
+              display: 'block',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              color: '#ffffff',
+              lineHeight: 1.2,
+            }}
+          >
+            {project.title}
+          </span>
+        </div>
+      )}
 
-      <div
-        style={{
-          position: 'absolute',
-          top: '14px',
-          right: '14px',
-          width: '28px',
-          height: '28px',
-          borderRadius: '50%',
-          backgroundColor: 'rgba(255,255,255,0.85)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: hovered ? 1 : 0,
-          transform: hovered ? 'scale(1)' : 'scale(0.8)',
-          transition: 'opacity 200ms ease, transform 200ms ease',
-        }}
-      >
-        <span style={{ fontSize: '0.65rem', color: '#111' }}>→</span>
-      </div>
+      {card.cardIndex === 0 && hovered && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            width: '26px',
+            height: '26px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255,255,255,0.9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2,
+          }}
+        >
+          <span style={{ fontSize: '0.6rem', color: '#111' }}>→</span>
+        </div>
+      )}
     </div>
   );
 }
 
-export function HeroPage({ projects, onOpen }: HeroPageProps) {
-  const galleryItems = useMemo(() => buildGalleryItems(projects), [projects]);
+export function HeroPage({
+  architectureEmphasis,
+  productDesignEmphasis,
+  softwareEmphasis,
+  onProjectChange,
+}: HeroPageProps) {
+  const sortedProjects = useMemo(() => {
+    return [...projects].sort(
+      (a, b) =>
+        getWeightedScore(
+          b,
+          architectureEmphasis,
+          productDesignEmphasis,
+          softwareEmphasis
+        ) -
+        getWeightedScore(
+          a,
+          architectureEmphasis,
+          productDesignEmphasis,
+          softwareEmphasis
+        )
+    );
+  }, [architectureEmphasis, productDesignEmphasis, softwareEmphasis]);
+
+  const sortKey = useMemo(
+    () => sortedProjects.map((project) => project.id).join('-'),
+    [sortedProjects]
+  );
+  const [isReordering, setIsReordering] = useState(false);
+
+  useEffect(() => {
+    setIsReordering(true);
+    const timeoutId = window.setTimeout(() => setIsReordering(false), 150);
+    return () => window.clearTimeout(timeoutId);
+  }, [sortKey]);
 
   return (
     <article
@@ -291,63 +454,49 @@ export function HeroPage({ projects, onOpen }: HeroPageProps) {
 
       <section
         style={{
-          padding: '80px 64px 80px 64px',
+          padding: '60px 48px 100px 48px',
           backgroundColor: '#f5f4f2',
         }}
       >
         <div
+          key={sortKey}
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            gridAutoRows: '200px',
-            gap: '12px',
+            gridAutoRows: '180px',
+            gap: '10px',
           }}
         >
-          {galleryItems.map((item) => (
-            <GalleryCard key={item.id} item={item} onClick={onOpen} />
-          ))}
+          {sortedProjects.flatMap((project, projectIndex) => {
+            const cards = getProjectCards(project).map((card) => (
+              <GalleryCard
+                key={`${project.id}-${card.cardIndex}`}
+                project={project}
+                card={card}
+                onClick={() => onProjectChange(project.id)}
+                isReordering={isReordering}
+              />
+            ));
+
+            if (projectIndex === sortedProjects.length - 1) {
+              return cards;
+            }
+
+            return [
+              ...cards,
+              <div
+                key={`separator-${project.id}`}
+                style={{
+                  gridColumn: 'span 3',
+                  height: '1px',
+                  backgroundColor: 'rgba(0,0,0,0.07)',
+                  margin: '4px 0',
+                }}
+              />,
+            ];
+          })}
         </div>
       </section>
-
-      <hr
-        style={{
-          border: 'none',
-          borderTop: '1px solid rgba(0,0,0,0.08)',
-          margin: 0,
-        }}
-      />
-
-      <section className="hero-index" style={{ padding: '0 64px' }}>
-        <div className="hero-index-head">
-          <span>— {String(projects.length).padStart(2, '0')} PROJECTS</span>
-          <span className="hero-index-rule" />
-          <span>2021 — 2025</span>
-        </div>
-        <ol className="hero-index-list">
-          {projects.map((p, i) => (
-            <li
-              key={p.id}
-              className="hero-index-row"
-              onClick={() => onOpen(p.id)}
-            >
-              <span className="hir-num">{String(i).padStart(2, '0')}</span>
-              <span className="hir-title">{p.title}</span>
-              <span className="hir-cat">{p.metadata.category}</span>
-              <span className="hir-mix">
-                A {p.disciplines.arch} · P {p.disciplines.prod} · S{' '}
-                {p.disciplines.sw}
-              </span>
-              <span className="hir-arrow">→</span>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <footer className="page-footer" style={{ padding: '0 64px 80px' }}>
-        <span>DANIEL · UTSoA</span>
-        <span>v1.0 · {new Date().getFullYear()}</span>
-        <span>daniel@example.com</span>
-      </footer>
     </article>
   );
 }
